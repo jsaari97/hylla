@@ -1,7 +1,7 @@
 [Desktop Entry]
 Version=1.0
-Name=My Product
-Comment=A Hylla application
+Name=Hylla
+Comment=A desktop application for managing a book library.
 # The Exec line includes %u to pass the URL to the application
 Exec=/usr/local/bin/hylla %u
 Terminal=false
