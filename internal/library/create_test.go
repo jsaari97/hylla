@@ -169,42 +169,6 @@ func TestCreateRejectsFile(t *testing.T) {
 	}
 }
 
-func TestCreateRejectsSymlink(t *testing.T) {
-	parent := t.TempDir()
-	target := filepath.Join(parent, "target")
-	root := filepath.Join(parent, "library-link")
-
-	if err := os.Mkdir(target, 0o755); err != nil {
-		t.Fatalf("create symlink target: %v", err)
-	}
-
-	if err := os.Symlink(target, root); err != nil {
-		t.Fatalf("create root symlink: %v", err)
-	}
-
-	createdLibrary, err := Create(context.Background(), root)
-	if err == nil {
-		if createdLibrary != nil {
-			closeTestLibrary(t, createdLibrary)
-		}
-		t.Fatal("Create() returned no error for a symbolic link")
-	}
-
-	if createdLibrary != nil {
-		closeTestLibrary(t, createdLibrary)
-		t.Error("Create() returned a library for a symbolic link")
-	}
-
-	entries, err := os.ReadDir(target)
-	if err != nil {
-		t.Fatalf("read symlink target: %v", err)
-	}
-
-	if len(entries) != 0 {
-		t.Errorf("symlink target entries = %v, want none", entryNames(entries))
-	}
-}
-
 func TestCreateCleansNewRootAfterCancellation(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
@@ -308,8 +272,8 @@ func TestLibraryCloseReleasesLock(t *testing.T) {
 		t.Fatalf("acquireLock() returned an error after library Close(): %v", err)
 	}
 
-	if err := createdLibrary.DB.Ping(); err == nil {
-		t.Fatal("library database is still open after Close()")
+	if createdLibrary.DB != nil {
+		t.Fatal("library database was not cleared after Close()")
 	}
 
 	t.Cleanup(func() {

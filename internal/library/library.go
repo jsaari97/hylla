@@ -3,7 +3,6 @@ package library
 import (
 	"database/sql"
 	"os"
-	"sync"
 )
 
 const CurrentFormatVersion = 1
@@ -17,7 +16,5 @@ type Library struct {
 	Root string
 	DB   *sql.DB
 
-	lockFile  *os.File
-	closeOnce sync.Once
-	closeErr  error
+	lockFile *os.File
 }

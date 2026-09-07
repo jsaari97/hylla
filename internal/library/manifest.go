@@ -54,3 +54,27 @@ func writeManifest(root string, manifest Manifest) error {
 
 	return nil
 }
+
+func readManifest(root string) (Manifest, error) {
+	path := filepath.Join(root, "library.json")
+
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return Manifest{}, fmt.Errorf("read manifest file: %w", err)
+	}
+
+	var manifest Manifest
+	if err := json.Unmarshal(data, &manifest); err != nil {
+		return Manifest{}, fmt.Errorf("unmarshal manifest JSON: %w", err)
+	}
+
+	if manifest.FormatVersion < 1 || manifest.FormatVersion > CurrentFormatVersion {
+		return Manifest{}, fmt.Errorf("unsupported manifest version: %d", manifest.FormatVersion)
+	}
+
+	if manifest.LibraryID == "" {
+		return Manifest{}, fmt.Errorf("manifest is missing library ID")
+	}
+
+	return manifest, nil
+}

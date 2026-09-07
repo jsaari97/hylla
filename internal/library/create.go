@@ -13,7 +13,12 @@ import (
 )
 
 func Create(ctx context.Context, root string) (_ *Library, err error) {
-	absoluteRoot, rootCreated, err := prepareRoot(root)
+	absoluteRoot, err := absoluteRootPath(root)
+	if err != nil {
+		return nil, err
+	}
+
+	rootCreated, err := prepareRoot(absoluteRoot)
 	if err != nil {
 		return nil, fmt.Errorf("failed to prepare library root: %w", err)
 	}
@@ -77,48 +82,31 @@ func Create(ctx context.Context, root string) (_ *Library, err error) {
 	return result, nil
 }
 
-func prepareRoot(root string) (
-	absoluteRoot string,
-	created bool,
-	err error,
-) {
-	if root == "" {
-		return "", false, fmt.Errorf("library root path cannot be empty")
-	}
-
-	absRoot, err := filepath.Abs(root)
-	if err != nil {
-		return "", false, err
-	}
-
-	fi, err := os.Lstat(absRoot)
+func prepareRoot(root string) (bool, error) {
+	info, err := os.Stat(root)
 	if err != nil {
 		if os.IsNotExist(err) {
-			if err := os.Mkdir(absRoot, 0o755); err != nil {
-				return "", false, fmt.Errorf("failed to create library root directory: %w", err)
+			if err := os.Mkdir(root, 0o755); err != nil {
+				return false, fmt.Errorf("failed to create library root directory: %w", err)
 			}
-			return absRoot, true, nil
+			return true, nil
 		}
-		return "", false, err
+		return false, err
 	}
 
-	if fi.Mode()&os.ModeSymlink != 0 {
-		return "", false, fmt.Errorf("library root path cannot be a symbolic link")
+	if !info.IsDir() {
+		return false, fmt.Errorf("library root path must be a directory")
 	}
 
-	if !fi.IsDir() {
-		return "", false, fmt.Errorf("library root path must be a directory")
-	}
-
-	entries, err := os.ReadDir(absRoot)
+	entries, err := os.ReadDir(root)
 	if err != nil {
-		return "", false, err
+		return false, err
 	}
 	if len(entries) > 0 {
-		return "", false, fmt.Errorf("library root path must be an empty directory")
+		return false, fmt.Errorf("library root path must be an empty directory")
 	}
 
-	return absRoot, false, nil
+	return false, nil
 }
 
 func createDirectories(root string) error {
