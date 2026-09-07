@@ -14,6 +14,9 @@ func main() {
 	app := application.New(application.Options{
 		Name:        "Hylla",
 		Description: "A desktop application for managing a book library.",
+		Services: []application.Service{
+			application.NewService(&LibraryService{}),
+		},
 		Assets: application.AssetOptions{
 			Handler: application.AssetFileServerFS(assets),
 		},
