@@ -3,6 +3,7 @@ package library
 import (
 	"database/sql"
 	"os"
+	"sync"
 )
 
 const CurrentFormatVersion = 1
@@ -13,8 +14,11 @@ type Manifest struct {
 }
 
 type Library struct {
-	Root string
-	DB   *sql.DB
+	Root     string
+	DB       *sql.DB
+	Warnings []string
 
-	lockFile *os.File
+	mu              sync.Mutex
+	metadataChecked map[string]bool
+	lockFile        *os.File
 }

@@ -6,6 +6,8 @@ func (library *Library) Close() error {
 	if library == nil {
 		return nil
 	}
+	library.mu.Lock()
+	defer library.mu.Unlock()
 
 	var closeErrors []error
 

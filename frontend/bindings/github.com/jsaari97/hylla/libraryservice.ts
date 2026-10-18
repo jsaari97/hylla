@@ -5,8 +5,28 @@
 // @ts-ignore: Unused imports
 import { Call as $Call, CancellablePromise as $CancellablePromise } from "@wailsio/runtime";
 
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore: Unused imports
+import * as $models from "./models.js";
+
 export function CreateLibrary(): $CancellablePromise<string> {
     return $Call.ByID(1201938221);
+}
+
+export function GetCover(id: string): $CancellablePromise<string> {
+    return $Call.ByID(131482377, id);
+}
+
+export function GetLibrary(): $CancellablePromise<$models.LibraryView> {
+    return $Call.ByID(1278163901);
+}
+
+export function ImportBooks(): $CancellablePromise<$models.FileImportResult[] | null> {
+    return $Call.ByID(630831223);
+}
+
+export function ImportFiles(paths: string[] | null): $CancellablePromise<$models.FileImportResult[] | null> {
+    return $Call.ByID(726300234, paths);
 }
 
 export function OpenLibrary(): $CancellablePromise<string> {

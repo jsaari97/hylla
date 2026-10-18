@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
+	"github.com/wailsapp/wails/v3/pkg/events"
 )
 
 //go:embed all:frontend/dist
@@ -25,10 +26,11 @@ func main() {
 		},
 	})
 
-	app.Window.NewWithOptions(application.WebviewWindowOptions{
-		Title:  "Hylla",
-		Width:  1000,
-		Height: 618,
+	window := app.Window.NewWithOptions(application.WebviewWindowOptions{
+		Title:          "Hylla",
+		Width:          1000,
+		Height:         618,
+		EnableFileDrop: true,
 		Mac: application.MacWindow{
 			InvisibleTitleBarHeight: 50,
 			Backdrop:                application.MacBackdropTranslucent,
@@ -36,6 +38,9 @@ func main() {
 		},
 		BackgroundColour: application.NewRGB(6, 7, 15),
 		URL:              "/",
+	})
+	window.OnWindowEvent(events.Common.WindowFilesDropped, func(event *application.WindowEvent) {
+		app.Event.Emit("books-dropped", event.Context().DroppedFiles())
 	})
 
 	if err := app.Run(); err != nil {

@@ -5,3 +5,8 @@ import * as LibraryService from "./libraryservice.js";
 export {
     LibraryService
 };
+
+export type {
+    FileImportResult,
+    LibraryView
+} from "./models.js";

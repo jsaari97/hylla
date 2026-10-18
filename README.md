@@ -1,29 +1,29 @@
 # Hylla
 
-Hylla is a desktop application for managing a personal book library. It keeps
-book files, cover images, metadata, and backups in one library directory.
+Hylla is a desktop application for a personal book library. It keeps books,
+covers, and metadata in one local directory. The primary platform is macOS.
 
-## Development state
+## Current features
 
-Hylla is in early development. The application shell is available. Library
-creation and book management are not available yet.
+- Create or open a library.
+- Import EPUB and PDF books through a file dialog or file drop.
+- Read embedded titles and authors, generate covers, and detect duplicate files.
+- Search by title, author, or file name, and view book details.
+
+Imports keep the source files unchanged. Missing metadata or covers do not stop
+an import. Interrupted imports are checked when the library opens.
+
+Hylla is in early development. Metadata editing, reading-status changes, and
+book deletion are not available yet. Select the library again after a restart.
 
 ## Development
 
-Start the application with live reload:
+Built with Go, Svelte, and Wails v3.
 
-```sh
-wails3 dev
-```
+| Task | Command |
+| --- | --- |
+| Run with live reload | `wails3 dev` |
+| Build | `wails3 build` |
+| Run Go tests | `go test ./...` |
 
-Build the application:
-
-```sh
-wails3 build
-```
-
-Run the Go tests:
-
-```sh
-go test ./...
-```
+See the [project specification](docs/PROJECT_SPECS.md) for design and planned features.

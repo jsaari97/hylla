@@ -21,6 +21,11 @@ type Author struct {
 	Name string
 }
 
+type Metadata struct {
+	Title   string
+	Authors []Author
+}
+
 type Book struct {
 	ID          string
 	Title       string

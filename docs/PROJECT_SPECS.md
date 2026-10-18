@@ -302,9 +302,25 @@ Fallbacks:
 - filename as title
 - no author value
 
-Use a standard PDF cover in the first release. Add a first-page thumbnail later only if users need it.
+Render the first PDF page as a cover. Save it in the library as a JPEG.
+Use CoreGraphics on macOS with cgo and embedded PDFium WebAssembly on other builds.
+Exclude PDFium and its runtime from native macOS builds. Initialize PDFium on first
+use, cache its compiled code when possible, and process one document at a time.
+Use a standard PDF cover if rendering is unavailable or fails.
 
 Users should be able to edit imported metadata manually.
+
+The book detail view must provide an **Edit metadata** action. The first
+editing version must support title and author names, with explicit Save and
+Cancel controls. It must reject an empty title and support more than one author.
+Description and publication fields can follow.
+
+Save manual changes in SQLite. Later metadata extraction must preserve manual
+changes. Automatic updates of existing books must apply only to untouched
+records that still use the file name as the title and have no author names.
+
+Test that edits remain after a restart, Cancel preserves the previous values,
+and automatic metadata extraction does not replace manual changes.
 
 Metadata edits must not modify the managed EPUB or PDF in the MVP.
 
@@ -635,9 +651,9 @@ Add best-effort EPUB metadata and cover extraction. A metadata error must not st
 
 ### Milestone 3: PDF metadata
 
-Add best-effort PDF metadata and page count extraction. Keep the standard PDF cover.
+Add best-effort PDF metadata and page count extraction. Use the first-page PDF cover with a standard cover as a fallback.
 
-Milestones 1 through 3 make the MVP. A PDF first-page thumbnail is not part of the MVP.
+Milestones 1 through 3 make the MVP. PDF first-page covers use CoreGraphics on macOS and PDFium WebAssembly on other platforms.
 
 Do not start Kobo integration until all MVP milestones are reliable.
 

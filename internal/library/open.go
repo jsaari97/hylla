@@ -3,7 +3,6 @@ package library
 import (
 	"context"
 	"fmt"
-	"os"
 	"path/filepath"
 
 	"github.com/jsaari97/hylla/internal/storage"
@@ -25,11 +24,12 @@ func Open(ctx context.Context, root string) (*Library, error) {
 	}
 
 	databasePath := filepath.Join(absoluteRoot, "library.sqlite")
-
-	if _, err := os.Stat(databasePath); err != nil {
+	checkedRoot, err := (&Library{Root: absoluteRoot}).openManagedRoot()
+	if err != nil {
 		_ = lockFile.Close()
-		return nil, fmt.Errorf("find library database: %w", err)
+		return nil, err
 	}
+	_ = checkedRoot.Close()
 
 	db, err := storage.Open(ctx, databasePath)
 	if err != nil {
@@ -46,6 +46,10 @@ func Open(ctx context.Context, root string) (*Library, error) {
 	if err := storage.Migrate(ctx, db); err != nil {
 		_ = result.Close()
 		return nil, fmt.Errorf("migrate library database: %w", err)
+	}
+	if err := result.recoverImports(ctx); err != nil {
+		_ = result.Close()
+		return nil, fmt.Errorf("recover library imports: %w", err)
 	}
 
 	return result, nil
