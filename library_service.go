@@ -13,8 +13,51 @@ import (
 )
 
 type LibraryService struct {
-	mu      sync.Mutex
-	current *library.Library
+	mu           sync.Mutex
+	current      *library.Library
+	configPath   string
+	startupError error
+}
+
+func (service *LibraryService) ServiceStartup(ctx context.Context, _ application.ServiceOptions) error {
+	service.mu.Lock()
+	defer service.mu.Unlock()
+	if service.current != nil {
+		return nil
+	}
+	service.startupError = nil
+	path, err := service.configurationPath()
+	if err != nil {
+		service.startupError = fmt.Errorf("find application settings: %w", err)
+		return nil
+	}
+	config, err := loadAppConfig(path)
+	if err != nil {
+		service.startupError = fmt.Errorf("read application settings: %w. Select a library to continue", err)
+		return nil
+	}
+	if config.LibraryPath == "" {
+		return nil
+	}
+	service.current, err = library.Open(ctx, config.LibraryPath)
+	if err != nil {
+		service.startupError = fmt.Errorf("open previous library %q: %w. Select a library to continue", config.LibraryPath, err)
+	}
+	// A missing or invalid library must not prevent application startup.
+	return nil
+}
+
+// Use the selected library even if its path cannot be saved.
+func (service *LibraryService) useLibrary(selected *library.Library) {
+	service.current = selected
+	service.startupError = nil
+	path, err := service.configurationPath()
+	if err == nil {
+		err = saveAppConfig(path, appConfig{LibraryPath: selected.Root})
+	}
+	if err != nil {
+		selected.Warnings = append(selected.Warnings, fmt.Sprintf("Cannot save the library location. Select the library again after a restart: %v", err))
+	}
 }
 
 type LibraryView struct {
@@ -64,7 +107,7 @@ func (service *LibraryService) CreateLibrary(ctx context.Context) (string, error
 		return "", fmt.Errorf("create library: %w", err)
 	}
 
-	service.current = createdLibrary
+	service.useLibrary(createdLibrary)
 
 	return createdLibrary.Root, nil
 }
@@ -89,7 +132,7 @@ func (service *LibraryService) OpenLibrary(ctx context.Context) (string, error) 
 		return "", fmt.Errorf("open library: %w", err)
 	}
 
-	service.current = openedLibrary
+	service.useLibrary(openedLibrary)
 
 	return openedLibrary.Root, nil
 }
@@ -108,6 +151,9 @@ func (service *LibraryService) GetLibrary(ctx context.Context) (LibraryView, err
 	service.mu.Lock()
 	defer service.mu.Unlock()
 	if service.current == nil {
+		if service.startupError != nil {
+			return LibraryView{}, service.startupError
+		}
 		return LibraryView{Books: []books.Book{}, Warnings: []string{}}, nil
 	}
 	stored, err := service.current.Books(ctx)

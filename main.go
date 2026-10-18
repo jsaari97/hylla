@@ -30,13 +30,14 @@ func main() {
 		Title:          "Hylla",
 		Width:          1000,
 		Height:         618,
+		MinWidth:       800,
+		MinHeight:      520,
 		EnableFileDrop: true,
 		Mac: application.MacWindow{
-			InvisibleTitleBarHeight: 50,
-			Backdrop:                application.MacBackdropTranslucent,
-			TitleBar:                application.MacTitleBarHiddenInset,
+			Backdrop: application.MacBackdropTranslucent,
+			TitleBar: application.MacTitleBarHiddenInset,
 		},
-		BackgroundColour: application.NewRGB(6, 7, 15),
+		BackgroundColour: application.NewRGB(247, 248, 247),
 		URL:              "/",
 	})
 	window.OnWindowEvent(events.Common.WindowFilesDropped, func(event *application.WindowEvent) {
