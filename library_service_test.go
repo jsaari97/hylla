@@ -10,6 +10,13 @@ import (
 	"github.com/jsaari97/hylla/internal/library"
 )
 
+func TestUpdateBookMetadataRequiresLibrary(t *testing.T) {
+	service := &LibraryService{}
+	if _, err := service.UpdateBookMetadata(context.Background(), "book", "Title", nil); err == nil {
+		t.Fatal("metadata edit without library succeeded")
+	}
+}
+
 func TestSetReadingStatusRequiresLibrary(t *testing.T) {
 	service := &LibraryService{}
 	if _, err := service.SetReadingStatus(context.Background(), "book", books.StatusRead); err == nil {

@@ -2,9 +2,10 @@
   import { onMount } from "svelte";
   import BookCover from "./BookCover.svelte";
   import ReadingStatusSelect from "./ReadingStatusSelect.svelte";
+  import MetadataEditor from "./MetadataEditor.svelte";
   import Icon from "./Icon.svelte";
   import { Events, type CancellablePromise } from "@wailsio/runtime";
-  import { CreateLibrary, OpenLibrary, GetLibrary, ImportBooks, ImportFiles, SetReadingStatus } from "../bindings/github.com/jsaari97/hylla/libraryservice";
+  import { CreateLibrary, OpenLibrary, GetLibrary, ImportBooks, ImportFiles, SetReadingStatus, UpdateBookMetadata } from "../bindings/github.com/jsaari97/hylla/libraryservice";
   import type { Book, ReadingStatus } from "../bindings/github.com/jsaari97/hylla/internal/books/models";
   import type { FileImportResult } from "../bindings/github.com/jsaari97/hylla/models";
 
@@ -70,6 +71,16 @@
       books = books.map((stored) => stored.ID === updated.ID ? updated : stored);
     } catch (error) {
       errorMessage = message(error);
+    } finally {
+      busy = false;
+    }
+  }
+
+  async function saveMetadata(id: string, title: string, authors: string[]) {
+    busy = true;
+    try {
+      const updated = await UpdateBookMetadata(id, title, authors);
+      books = books.map((stored) => stored.ID === updated.ID ? updated : stored);
     } finally {
       busy = false;
     }
@@ -299,6 +310,10 @@
             <div class="detail-cover">{#key selectedBook.ID}<BookCover id={selectedBook.ID} title={selectedBook.Title} format={selectedBook.Format} />{/key}</div>
             <h3>{selectedBook.Title}</h3>
             <p class="detail-author">{authorNames(selectedBook) || "Unknown author"}</p>
+            {#key selectedBook.ID}
+              <MetadataEditor book={selectedBook} {busy}
+                onSave={(title, authors) => saveMetadata(selectedBook!.ID, title, authors)} />
+            {/key}
             <div class="detail-status-control">
               <span>Reading status</span>
               <ReadingStatusSelect value={selectedBook.ReadingStatus} title={selectedBook.Title} disabled={busy}

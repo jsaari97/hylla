@@ -40,3 +40,7 @@ export function OpenLibrary(): $CancellablePromise<string> {
 export function SetReadingStatus(id: string, status: books$0.ReadingStatus): $CancellablePromise<books$0.Book> {
     return $Call.ByID(1899785516, id, status);
 }
+
+export function UpdateBookMetadata(id: string, title: string, authors: string[] | null): $CancellablePromise<books$0.Book> {
+    return $Call.ByID(2067110615, id, title, authors);
+}

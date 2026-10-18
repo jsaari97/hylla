@@ -164,6 +164,15 @@ func (service *LibraryService) GetLibrary(ctx context.Context) (LibraryView, err
 	return LibraryView{Path: service.current.Root, Books: stored, Warnings: warnings}, nil
 }
 
+func (service *LibraryService) UpdateBookMetadata(ctx context.Context, id, title string, authors []string) (books.Book, error) {
+	service.mu.Lock()
+	defer service.mu.Unlock()
+	if service.current == nil {
+		return books.Book{}, fmt.Errorf("open a library first")
+	}
+	return service.current.UpdateBookMetadata(ctx, id, title, authors)
+}
+
 func (service *LibraryService) SetReadingStatus(ctx context.Context, id string, status books.ReadingStatus) (books.Book, error) {
 	service.mu.Lock()
 	defer service.mu.Unlock()

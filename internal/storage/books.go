@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/jsaari97/hylla/internal/books"
@@ -57,6 +58,46 @@ func SetReadingStatus(ctx context.Context, db *sql.DB, id string, status books.R
 	}
 	if count == 0 {
 		return books.Book{}, fmt.Errorf("book not found: %w", sql.ErrNoRows)
+	}
+	return BookByID(ctx, db, id)
+}
+
+func UpdateBookMetadata(ctx context.Context, db *sql.DB, id, title string, names []string) (books.Book, error) {
+	title = strings.TrimSpace(title)
+	if title == "" {
+		return books.Book{}, fmt.Errorf("title must not be empty")
+	}
+	authors := make([]books.Author, 0, len(names))
+	for _, name := range names {
+		if name = strings.TrimSpace(name); name != "" {
+			authors = append(authors, books.Author{Name: name})
+		}
+	}
+	tx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		return books.Book{}, err
+	}
+	defer tx.Rollback()
+	result, err := tx.ExecContext(ctx, `UPDATE books SET title = ?, updated_at = ? WHERE id = ?`,
+		title, time.Now().UTC().Format(time.RFC3339Nano), id)
+	if err != nil {
+		return books.Book{}, fmt.Errorf("save book title: %w", err)
+	}
+	count, err := result.RowsAffected()
+	if err != nil {
+		return books.Book{}, err
+	}
+	if count == 0 {
+		return books.Book{}, fmt.Errorf("book not found: %w", sql.ErrNoRows)
+	}
+	if _, err := tx.ExecContext(ctx, `DELETE FROM book_authors WHERE book_id = ?`, id); err != nil {
+		return books.Book{}, fmt.Errorf("replace book authors: %w", err)
+	}
+	if err := insertAuthors(ctx, tx, id, authors); err != nil {
+		return books.Book{}, err
+	}
+	if err := tx.Commit(); err != nil {
+		return books.Book{}, fmt.Errorf("save book metadata: %w", err)
 	}
 	return BookByID(ctx, db, id)
 }
