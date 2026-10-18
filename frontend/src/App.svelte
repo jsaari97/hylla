@@ -1,10 +1,11 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import BookCover from "./BookCover.svelte";
+  import ReadingStatusSelect from "./ReadingStatusSelect.svelte";
   import Icon from "./Icon.svelte";
   import { Events, type CancellablePromise } from "@wailsio/runtime";
-  import { CreateLibrary, OpenLibrary, GetLibrary, ImportBooks, ImportFiles } from "../bindings/github.com/jsaari97/hylla/libraryservice";
-  import type { Book } from "../bindings/github.com/jsaari97/hylla/internal/books/models";
+  import { CreateLibrary, OpenLibrary, GetLibrary, ImportBooks, ImportFiles, SetReadingStatus } from "../bindings/github.com/jsaari97/hylla/libraryservice";
+  import type { Book, ReadingStatus } from "../bindings/github.com/jsaari97/hylla/internal/books/models";
   import type { FileImportResult } from "../bindings/github.com/jsaari97/hylla/models";
 
   let libraryPath = "";
@@ -58,6 +59,20 @@
     libraryPath = library.Path;
     books = library.Books ?? [];
     warnings = library.Warnings ?? [];
+  }
+
+  async function changeReadingStatus(book: Book, status: ReadingStatus) {
+    if (busy || book.ReadingStatus === status) return;
+    busy = true;
+    errorMessage = "";
+    try {
+      const updated = await SetReadingStatus(book.ID, status);
+      books = books.map((stored) => stored.ID === updated.ID ? updated : stored);
+    } catch (error) {
+      errorMessage = message(error);
+    } finally {
+      busy = false;
+    }
   }
 
   async function selectLibrary(action: () => Promise<string>) {
@@ -251,15 +266,23 @@
               {/if}
               <div class:book-grid={bookView === "grid"} class:book-list={bookView === "list"}>
                 {#each visibleBooks as book (book.ID)}
-                  <button type="button" class="book-card" class:selected={selectedID === book.ID}
-                    aria-pressed={selectedID === book.ID} onclick={() => selectedID = book.ID}>
-                    <span class="cover-well"><BookCover id={book.ID} title={book.Title} format={book.Format} /></span>
-                    <span class="book-summary">
-                      <span class="book-title" title={book.Title}>{book.Title}</span>
-                      <span class="book-author" title={authorNames(book)}>{authorNames(book) || "Unknown author"}</span>
-                    </span>
-                    <span class="book-caption"><span class="format-label">{book.Format.toUpperCase()}</span><span class="reading-label"><span class="status-dot" class:reading={book.ReadingStatus === "reading"} class:read={book.ReadingStatus === "read"}></span>{statusViews.find((view) => view.value === book.ReadingStatus)?.label ?? book.ReadingStatus}</span></span>
-                  </button>
+                  <div class="book-item" class:selected={selectedID === book.ID}>
+                    <button type="button" class="book-card"
+                      aria-pressed={selectedID === book.ID} onclick={() => selectedID = book.ID}>
+                      <span class="cover-well"><BookCover id={book.ID} title={book.Title} format={book.Format} /></span>
+                      <span class="book-summary">
+                        <span class="book-title" title={book.Title}>{book.Title}</span>
+                        <span class="book-author" title={authorNames(book)}>{authorNames(book) || "Unknown author"}</span>
+                      </span>
+                    </button>
+                    <div class="book-caption">
+                      <span class="format-label">{book.Format.toUpperCase()}</span>
+                      <div class="book-status-control">
+                        <ReadingStatusSelect value={book.ReadingStatus} title={book.Title} disabled={busy}
+                          onChange={(status) => changeReadingStatus(book, status)} />
+                      </div>
+                    </div>
+                  </div>
                 {/each}
               </div>
             {/if}
@@ -276,7 +299,11 @@
             <div class="detail-cover">{#key selectedBook.ID}<BookCover id={selectedBook.ID} title={selectedBook.Title} format={selectedBook.Format} />{/key}</div>
             <h3>{selectedBook.Title}</h3>
             <p class="detail-author">{authorNames(selectedBook) || "Unknown author"}</p>
-            <span class="status-badge">{statusViews.find((view) => view.value === selectedBook.ReadingStatus)?.label ?? selectedBook.ReadingStatus}</span>
+            <div class="detail-status-control">
+              <span>Reading status</span>
+              <ReadingStatusSelect value={selectedBook.ReadingStatus} title={selectedBook.Title} disabled={busy}
+                onChange={(status) => changeReadingStatus(selectedBook!, status)} />
+            </div>
             <dl>
               <dt>Format</dt><dd>{selectedBook.Format.toUpperCase()}</dd>
               <dt>File name</dt><dd>{selectedBook.OriginalFilename}</dd>

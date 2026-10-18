@@ -7,6 +7,10 @@ import { Call as $Call, CancellablePromise as $CancellablePromise } from "@wails
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore: Unused imports
+import * as books$0 from "./internal/books/models.js";
+
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore: Unused imports
 import * as $models from "./models.js";
 
 export function CreateLibrary(): $CancellablePromise<string> {
@@ -31,4 +35,8 @@ export function ImportFiles(paths: string[] | null): $CancellablePromise<$models
 
 export function OpenLibrary(): $CancellablePromise<string> {
     return $Call.ByID(2423459937);
+}
+
+export function SetReadingStatus(id: string, status: books$0.ReadingStatus): $CancellablePromise<books$0.Book> {
+    return $Call.ByID(1899785516, id, status);
 }

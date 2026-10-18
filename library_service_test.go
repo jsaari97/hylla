@@ -6,8 +6,16 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/jsaari97/hylla/internal/books"
 	"github.com/jsaari97/hylla/internal/library"
 )
+
+func TestSetReadingStatusRequiresLibrary(t *testing.T) {
+	service := &LibraryService{}
+	if _, err := service.SetReadingStatus(context.Background(), "book", books.StatusRead); err == nil {
+		t.Fatal("status update without library succeeded")
+	}
+}
 
 func TestImportFilesRequiresLibrary(t *testing.T) {
 	service := &LibraryService{}

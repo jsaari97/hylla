@@ -40,6 +40,27 @@ func BookByID(ctx context.Context, db *sql.DB, id string) (books.Book, error) {
 	return readBook(ctx, db, `SELECT `+bookColumns+` FROM books WHERE id = ?`, id)
 }
 
+func SetReadingStatus(ctx context.Context, db *sql.DB, id string, status books.ReadingStatus) (books.Book, error) {
+	switch status {
+	case books.StatusUnread, books.StatusReading, books.StatusRead:
+	default:
+		return books.Book{}, fmt.Errorf("invalid reading status %q", status)
+	}
+	result, err := db.ExecContext(ctx, `UPDATE books SET reading_status = ?, updated_at = ? WHERE id = ?`,
+		status, time.Now().UTC().Format(time.RFC3339Nano), id)
+	if err != nil {
+		return books.Book{}, fmt.Errorf("save reading status: %w", err)
+	}
+	count, err := result.RowsAffected()
+	if err != nil {
+		return books.Book{}, err
+	}
+	if count == 0 {
+		return books.Book{}, fmt.Errorf("book not found: %w", sql.ErrNoRows)
+	}
+	return BookByID(ctx, db, id)
+}
+
 func readBook(ctx context.Context, db *sql.DB, query, value string) (books.Book, error) {
 	book, err := scanBook(db.QueryRowContext(ctx, query, value))
 	if err != nil {
